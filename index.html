@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>★ INVITATIE MAJORAT ★</title>
+  <meta name="description" content="Ești invitat la o experiență digitală interactivă. Zgârie pentru a descoperi surpriza!">
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #ffffff;
+      --secondary: #aaaaaa;
+      --accent: #5e5e5e;
+      --bg: #000000;
+      --font-main: 'Syne', sans-serif;
+      --font-display: 'Orbitron', sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--primary);
+      cursor: crosshair;
+    }
+
+    /* Dynamic Mesh Background */
+    body::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
+        linear-gradient(135deg, #050505 0%, #0a0a0a 100%);
+      z-index: -1;
+    }
+
+    .wrapper {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      gap: 30px;
+      perspective: 1000px;
+    }
+
+    .fancy-hint {
+      font-family: var(--font-display);
+      font-size: 12px;
+      letter-spacing: 0.4em;
+      opacity: 0.6;
+      text-transform: uppercase;
+      text-align: center;
+      animation: pulse 2s ease-in-out infinite;
+      text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.98); }
+      50% { opacity: 0.8; transform: scale(1); }
+    }
+
+    .container {
+      position: relative;
+      width: 85vw;
+      max-width: 380px;
+      border-radius: 20px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 20px 50px rgba(0,0,0,0.5),
+        inset 0 0 20px rgba(255,255,255,0.02);
+      backdrop-filter: blur(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .container:active {
+      transform: scale(0.99);
+    }
+
+    .image-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 4 / 5; /* Matches most portrait invitations */
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: contrast(1.1) brightness(1.1);
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .final-text {
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 0.5em;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 1s cubic-bezier(0.19, 1, 0.22, 1);
+      text-shadow: 0 0 20px rgba(255,255,255,0.5);
+    }
+
+    .final-text.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Custom Scrollbar for better UX if content overflows */
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+
+
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="fancy-hint">🖤 ZGÂRIE PENTRU SURPRIZĂ 🖤</div>
+
+  <div class="container">
+    <div class="image-wrapper">
+      <img src="Vision.png" alt="invitație">
+      <canvas id="scratch"></canvas>
+    </div>
+  </div>
+
+
+  <div class="final-text" id="finalMessage">★ NE VEDEM ACOLO ★</div>
+</div>
+
+<script>
+  const canvas = document.getElementById('scratch');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const img = document.querySelector('img');
+  const message = document.getElementById('finalMessage');
+  const container = document.querySelector('.image-wrapper');
+
+  let isDrawing = false;
+  let revealed = false;
+  let scratchData = null; // To store scratch state on resize
+
+  // --- SCRATCH LAYER INITIALIZATION ---
+  function initScratchLayer() {
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    // Create Metallic Noise Texture
+    const tempCanvas = document.createElement('canvas');
+    const tCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = 128;
+    tempCanvas.height = 128;
+    
+    const imageData = tCtx.createImageData(128, 128);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const v = 60 + Math.random() * 40;
+      imageData.data[i] = v;     // R
+      imageData.data[i+1] = v;   // G
+      imageData.data[i+2] = v;   // B
+      imageData.data[i+3] = 255; // A
+    }
+    tCtx.putImageData(imageData, 0, 0);
+    
+    const pattern = ctx.createPattern(tempCanvas, 'repeat');
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = pattern;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add a dark overlay/tint
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add some "scratches" or grain
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    for(let i=0; i<20; i++) {
+        ctx.beginPath();
+        ctx.moveTo(Math.random()*canvas.width, Math.random()*canvas.height);
+        ctx.lineTo(Math.random()*canvas.width, Math.random()*canvas.height);
+        ctx.stroke();
+    }
+
+    ctx.globalCompositeOperation = 'destination-out';
+  }
+
+  function handleResize() {
+    if (revealed) return;
+    // Simple way: re-init. Better way: save state.
+    // For now, re-init is safer to keep it looking good on mobile rotate
+    initScratchLayer();
+  }
+
+  window.addEventListener('resize', handleResize);
+  img.onload = initScratchLayer;
+  if (img.complete) initScratchLayer();
+
+  // --- INTERACTION ---
+  const startDrawing = () => isDrawing = true;
+  const stopDrawing = () => {
+    isDrawing = false;
+    checkReveal();
+  };
+
+  canvas.addEventListener('pointerdown', startDrawing);
+  window.addEventListener('pointerup', stopDrawing);
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!isDrawing || revealed) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.arc(x, y, 30, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // --- REVEAL LOGIC ---
+  function checkReveal() {
+    if (revealed) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let transparentPixels = 0;
+    const step = 20; // Optimization: check every 20th pixel
+    
+    for (let i = 3; i < imageData.data.length; i += 4 * step) {
+      if (imageData.data[i] === 0) transparentPixels++;
+    }
+
+    const totalSampled = (imageData.data.length / 4) / step;
+    if (transparentPixels / totalSampled > 0.45) {
+      revealEverything();
+    }
+  }
+
+  function revealEverything() {
+    revealed = true;
+    canvas.style.transition = 'opacity 1.5s ease';
+    canvas.style.opacity = '0';
+    setTimeout(() => {
+        canvas.remove();
+        message.classList.add('show');
+        launchCelebration();
+    }, 500);
+  }
+
+  // --- CELEBRATION (STAR PARTICLES) ---
+  function launchCelebration() {
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    const particleCanvas = document.createElement('canvas');
+    particleCanvas.style.position = 'fixed';
+    particleCanvas.style.top = '0';
+    particleCanvas.style.left = '0';
+    particleCanvas.style.width = '100vw';
+    particleCanvas.style.height = '100vh';
+    particleCanvas.style.pointerEvents = 'none';
+    particleCanvas.style.zIndex = '100';
+    document.body.appendChild(particleCanvas);
+
+    const pCtx = particleCanvas.getContext('2d');
+    let width, height;
+
+    function resizeParticles() {
+      width = particleCanvas.width = window.innerWidth;
+      height = particleCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeParticles);
+    resizeParticles();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = width / 2;
+        this.y = height / 2;
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 2 + Math.random() * 8;
+        this.vx = Math.cos(angle) * velocity;
+        this.vy = Math.sin(angle) * velocity;
+        this.size = 2 + Math.random() * 4;
+        this.life = 1;
+        this.decay = 0.01 + Math.random() * 0.02;
+        this.color = `rgba(255, 255, 255, ${Math.random()})`;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= this.decay;
+        if (this.life <= 0) this.reset();
+      }
+      draw() {
+        pCtx.fillStyle = this.color;
+        pCtx.save();
+        pCtx.translate(this.x, this.y);
+        pCtx.rotate(Date.now() * 0.01);
+        // Draw a small "sparkle"
+        pCtx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        pCtx.restore();
+      }
+    }
+
+    const particles = Array.from({ length: 100 }, () => new Particle());
+
+    function frame() {
+      pCtx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      } else {
+        particleCanvas.remove();
+      }
+    }
+    frame();
+  }
+
+  // Prevent default scrolling on mobile while scratching
+  document.body.addEventListener('touchstart', (e) => {
+    if (e.target === canvas) e.preventDefault();
+  }, { passive: false });
+  document.body.addEventListener('touchmove', (e) => {
+    if (e.target === canvas) e.preventDefault();
+  }, { passive: false });
+
+</script>
+
+</body>
+</html>
